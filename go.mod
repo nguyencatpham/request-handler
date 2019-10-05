@@ -1,4 +1,4 @@
-module github.com/nguyencatpham/request-handler.git
+module github.com/nguyencatpham/request-handler
 
 go 1.12
 
