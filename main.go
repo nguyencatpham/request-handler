@@ -1,6 +1,7 @@
 package requestHandler
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -50,6 +51,7 @@ func Get(requestModel RequestModel, result *interface{}) error {
 	case Bearer:
 		header := fmt.Sprintf("Bearer %s", requestModel.Token)
 		req.Header.Set("Authorization", header)
+		req.Header.Add("Content-Type", "application/json")
 	default:
 		break
 	}
@@ -92,7 +94,8 @@ func Get(requestModel RequestModel, result *interface{}) error {
 
 // Post request
 func Post(requestModel RequestModel, result *interface{}) error {
-	req, err := http.NewRequest("POST", requestModel.URL, nil)
+
+	req, err := http.NewRequest("POST", requestModel.URL, bytes.NewBufferString(requestModel.Body))
 	switch requestModel.TokenType {
 	case Basic:
 		req.SetBasicAuth(requestModel.Username, requestModel.Password)
@@ -100,6 +103,7 @@ func Post(requestModel RequestModel, result *interface{}) error {
 	case Bearer:
 		header := fmt.Sprintf("Bearer %s", requestModel.Token)
 		req.Header.Set("Authorization", header)
+		req.Header.Add("Content-Type", "application/json")
 	default:
 		break
 	}
@@ -119,6 +123,7 @@ func Post(requestModel RequestModel, result *interface{}) error {
 	if resp.StatusCode >= http.StatusBadRequest {
 		message := fmt.Sprintf("POST-URL:%s-ERROR CODE:%v\n", requestModel.URL, resp.StatusCode)
 		if result != nil && !reflect.ValueOf(result).IsNil() {
+			fmt.Printf("POST-URL:%s-ERROR CODE:%v MODEL:%v RESULT:%v\n", requestModel.URL, resp.StatusCode, requestModel, *result)
 			temp, ok := (*result).(map[string]interface{})
 			if ok && temp != nil && temp["data"] != nil {
 				data := (temp["data"]).(map[string]interface{})
@@ -142,7 +147,7 @@ func Post(requestModel RequestModel, result *interface{}) error {
 
 // Put request
 func Put(requestModel RequestModel, result *interface{}) error {
-	req, err := http.NewRequest("PUT", requestModel.URL, nil)
+	req, err := http.NewRequest("PUT", requestModel.URL, bytes.NewBufferString(requestModel.Body))
 	switch requestModel.TokenType {
 	case Basic:
 		req.SetBasicAuth(requestModel.Username, requestModel.Password)
@@ -150,6 +155,7 @@ func Put(requestModel RequestModel, result *interface{}) error {
 	case Bearer:
 		header := fmt.Sprintf("Bearer %s", requestModel.Token)
 		req.Header.Set("Authorization", header)
+		req.Header.Add("Content-Type", "application/json")
 	default:
 		break
 	}
@@ -192,7 +198,7 @@ func Put(requestModel RequestModel, result *interface{}) error {
 
 // Patch request
 func Patch(requestModel RequestModel, result *interface{}) error {
-	req, err := http.NewRequest("PATCH", requestModel.URL, nil)
+	req, err := http.NewRequest("PATCH", requestModel.URL, bytes.NewBufferString(requestModel.Body))
 	switch requestModel.TokenType {
 	case Basic:
 		req.SetBasicAuth(requestModel.Username, requestModel.Password)
@@ -200,6 +206,7 @@ func Patch(requestModel RequestModel, result *interface{}) error {
 	case Bearer:
 		header := fmt.Sprintf("Bearer %s", requestModel.Token)
 		req.Header.Set("Authorization", header)
+		req.Header.Add("Content-Type", "application/json")
 	default:
 		break
 	}
@@ -250,6 +257,7 @@ func Delete(requestModel RequestModel, result *interface{}) error {
 	case Bearer:
 		header := fmt.Sprintf("Bearer %s", requestModel.Token)
 		req.Header.Set("Authorization", header)
+		req.Header.Add("Content-Type", "application/json")
 	default:
 		break
 	}
