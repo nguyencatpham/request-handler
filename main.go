@@ -39,261 +39,92 @@ type RequestModel struct {
 	Username  string
 	Password  string
 	Body      string
+	Type      string
+}
+
+// Base request
+func Base(requestModel RequestModel, result *interface{}) error {
+	var body *bytes.Buffer
+	if requestModel.Body != "" {
+		body = bytes.NewBufferString(requestModel.Body)
+	}
+	req, err := http.NewRequest(requestModel.Type, requestModel.URL, body)
+	switch requestModel.TokenType {
+	case Basic:
+		req.SetBasicAuth(requestModel.Username, requestModel.Password)
+		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	case Bearer:
+		header := fmt.Sprintf("Bearer %s", requestModel.Token)
+		req.Header.Set("Authorization", header)
+		req.Header.Add("Content-Type", "application/json")
+	default:
+		break
+	}
+	req.Header.Add("Accept", "application/json")
+	req.Header.Add("Accept-Encoding", "identity")
+	req.Header.Add("x-xss-protection", "1; mode=block")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if err = json.NewDecoder(resp.Body).Decode(result); err != nil {
+		fmt.Printf("%s-URL:%s-ERROR:%v\n", requestModel.Type, requestModel.URL, err)
+		return nil
+	}
+	if resp.StatusCode >= http.StatusBadRequest {
+		message := fmt.Sprintf("%s-URL:%s-ERROR CODE:%v\n", requestModel.Type, requestModel.URL, resp.StatusCode)
+		if result != nil && !reflect.ValueOf(result).IsNil() {
+			temp, ok := (*result).(map[string]interface{})
+			if ok && temp != nil && temp["data"] != nil {
+				data := (temp["data"]).(map[string]interface{})
+				if data != nil {
+					msg := data["message"]
+					if msg != nil {
+						msgStr := msg.(string)
+
+						if msgStr != "" {
+							message = msgStr
+						}
+					}
+				}
+			}
+		}
+		return echo.NewHTTPError(resp.StatusCode, message)
+	}
+
+	return nil
 }
 
 // Get request
 func Get(requestModel RequestModel, result *interface{}) error {
-	req, err := http.NewRequest("GET", requestModel.URL, nil)
-	switch requestModel.TokenType {
-	case Basic:
-		req.SetBasicAuth(requestModel.Username, requestModel.Password)
-		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	case Bearer:
-		header := fmt.Sprintf("Bearer %s", requestModel.Token)
-		req.Header.Set("Authorization", header)
-		req.Header.Add("Content-Type", "application/json")
-	default:
-		break
-	}
-	req.Header.Add("Accept", "application/json")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if err = json.NewDecoder(resp.Body).Decode(result); err != nil {
-		fmt.Printf("GET-URL:%s-ERROR:%v\n", requestModel.URL, err)
-		return nil
-	}
-	if resp.StatusCode >= http.StatusBadRequest {
-		message := fmt.Sprintf("GET-URL:%s-ERROR CODE:%v\n", requestModel.URL, resp.StatusCode)
-		if result != nil && !reflect.ValueOf(result).IsNil() {
-			temp, ok := (*result).(map[string]interface{})
-			if ok && temp != nil && temp["data"] != nil {
-				data := (temp["data"]).(map[string]interface{})
-				if data != nil {
-					msg := data["message"]
-					if msg != nil {
-						msgStr := msg.(string)
-
-						if msgStr != "" {
-							message = msgStr
-						}
-					}
-				}
-			}
-		}
-		return echo.NewHTTPError(resp.StatusCode, message)
-	}
-
-	return nil
+	requestModel.Type = "GET"
+	return Base(requestModel, result)
 }
 
 // Post request
 func Post(requestModel RequestModel, result *interface{}) error {
-
-	req, err := http.NewRequest("POST", requestModel.URL, bytes.NewBufferString(requestModel.Body))
-	switch requestModel.TokenType {
-	case Basic:
-		req.SetBasicAuth(requestModel.Username, requestModel.Password)
-		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	case Bearer:
-		header := fmt.Sprintf("Bearer %s", requestModel.Token)
-		req.Header.Set("Authorization", header)
-		req.Header.Add("Content-Type", "application/json")
-	default:
-		break
-	}
-	req.Header.Add("Accept", "application/json")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if err = json.NewDecoder(resp.Body).Decode(result); err != nil {
-		fmt.Printf("POST-URL:%s-ERROR:%v\n", requestModel.URL, err)
-		return nil
-	}
-	if resp.StatusCode >= http.StatusBadRequest {
-		message := fmt.Sprintf("POST-URL:%s-ERROR CODE:%v\n", requestModel.URL, resp.StatusCode)
-		if result != nil && !reflect.ValueOf(result).IsNil() {
-			fmt.Printf("POST-URL:%s-ERROR CODE:%v MODEL:%v RESULT:%v\n", requestModel.URL, resp.StatusCode, requestModel, *result)
-			temp, ok := (*result).(map[string]interface{})
-			if ok && temp != nil && temp["data"] != nil {
-				data := (temp["data"]).(map[string]interface{})
-				if data != nil {
-					msg := data["message"]
-					if msg != nil {
-						msgStr := msg.(string)
-
-						if msgStr != "" {
-							message = msgStr
-						}
-					}
-				}
-			}
-		}
-		return echo.NewHTTPError(resp.StatusCode, message)
-	}
-
-	return nil
+	requestModel.Type = "POST"
+	return Base(requestModel, result)
 }
 
 // Put request
 func Put(requestModel RequestModel, result *interface{}) error {
-	req, err := http.NewRequest("PUT", requestModel.URL, bytes.NewBufferString(requestModel.Body))
-	switch requestModel.TokenType {
-	case Basic:
-		req.SetBasicAuth(requestModel.Username, requestModel.Password)
-		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	case Bearer:
-		header := fmt.Sprintf("Bearer %s", requestModel.Token)
-		req.Header.Set("Authorization", header)
-		req.Header.Add("Content-Type", "application/json")
-	default:
-		break
-	}
-	req.Header.Add("Accept", "application/json")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if err = json.NewDecoder(resp.Body).Decode(result); err != nil {
-		fmt.Printf("PUT-URL:%s-ERROR:%v\n", requestModel.URL, err)
-		return nil
-	}
-	if resp.StatusCode >= http.StatusBadRequest {
-		message := fmt.Sprintf("PUT-URL:%s-ERROR CODE:%v\n", requestModel.URL, resp.StatusCode)
-		if result != nil && !reflect.ValueOf(result).IsNil() {
-			temp, ok := (*result).(map[string]interface{})
-			if ok && temp != nil && temp["data"] != nil {
-				data := (temp["data"]).(map[string]interface{})
-				if data != nil {
-					msg := data["message"]
-					if msg != nil {
-						msgStr := msg.(string)
-
-						if msgStr != "" {
-							message = msgStr
-						}
-					}
-				}
-			}
-		}
-		return echo.NewHTTPError(resp.StatusCode, message)
-	}
-
-	return nil
+	requestModel.Type = "PUT"
+	return Base(requestModel, result)
 }
 
 // Patch request
 func Patch(requestModel RequestModel, result *interface{}) error {
-	req, err := http.NewRequest("PATCH", requestModel.URL, bytes.NewBufferString(requestModel.Body))
-	switch requestModel.TokenType {
-	case Basic:
-		req.SetBasicAuth(requestModel.Username, requestModel.Password)
-		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	case Bearer:
-		header := fmt.Sprintf("Bearer %s", requestModel.Token)
-		req.Header.Set("Authorization", header)
-		req.Header.Add("Content-Type", "application/json")
-	default:
-		break
-	}
-	req.Header.Add("Accept", "application/json")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if err = json.NewDecoder(resp.Body).Decode(result); err != nil {
-		fmt.Printf("PATCH-URL:%s-ERROR:%v\n", requestModel.URL, err)
-		return nil
-	}
-	if resp.StatusCode >= http.StatusBadRequest {
-		message := fmt.Sprintf("PATCH-URL:%s-ERROR CODE:%v\n", requestModel.URL, resp.StatusCode)
-		if result != nil && !reflect.ValueOf(result).IsNil() {
-			temp, ok := (*result).(map[string]interface{})
-			if ok && temp != nil && temp["data"] != nil {
-				data := (temp["data"]).(map[string]interface{})
-				if data != nil {
-					msg := data["message"]
-					if msg != nil {
-						msgStr := msg.(string)
-
-						if msgStr != "" {
-							message = msgStr
-						}
-					}
-				}
-			}
-		}
-		return echo.NewHTTPError(resp.StatusCode, message)
-	}
-
-	return nil
+	requestModel.Type = "PATCH"
+	return Base(requestModel, result)
 }
 
 // Delete request
 func Delete(requestModel RequestModel, result *interface{}) error {
-	req, err := http.NewRequest("DELETE", requestModel.URL, nil)
-	switch requestModel.TokenType {
-	case Basic:
-		req.SetBasicAuth(requestModel.Username, requestModel.Password)
-		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	case Bearer:
-		header := fmt.Sprintf("Bearer %s", requestModel.Token)
-		req.Header.Set("Authorization", header)
-		req.Header.Add("Content-Type", "application/json")
-	default:
-		break
-	}
-	req.Header.Add("Accept", "application/json")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if err = json.NewDecoder(resp.Body).Decode(result); err != nil {
-		fmt.Printf("DELETE-URL:%s-ERROR:%v\n", requestModel.URL, err)
-		return nil
-	}
-	if resp.StatusCode >= http.StatusBadRequest {
-		message := fmt.Sprintf("DELETE-URL:%s-ERROR CODE:%v\n", requestModel.URL, resp.StatusCode)
-		if result != nil && !reflect.ValueOf(result).IsNil() {
-			temp, ok := (*result).(map[string]interface{})
-			if ok && temp != nil && temp["data"] != nil {
-				data := (temp["data"]).(map[string]interface{})
-				if data != nil {
-					msg := data["message"]
-					if msg != nil {
-						msgStr := msg.(string)
-
-						if msgStr != "" {
-							message = msgStr
-						}
-					}
-				}
-			}
-		}
-		return echo.NewHTTPError(resp.StatusCode, message)
-	}
-
-	return nil
+	requestModel.Type = "DELETE"
+	return Base(requestModel, result)
 }
