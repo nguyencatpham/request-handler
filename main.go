@@ -72,7 +72,7 @@ func Base(requestModel RequestModel, result *interface{}) error {
 	defer resp.Body.Close()
 
 	if err = json.NewDecoder(resp.Body).Decode(result); err != nil {
-		fmt.Printf("%s-URL:%s-ERROR:%v\n", requestModel.Type, requestModel.URL, err)
+		// fmt.Printf("%s-URL:%s-ERROR:%v\n", requestModel.Type, requestModel.URL, err)
 		return nil
 	}
 	if resp.StatusCode >= http.StatusBadRequest {
