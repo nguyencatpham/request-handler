@@ -44,10 +44,9 @@ type RequestModel struct {
 
 // Base request
 func Base(requestModel RequestModel, result *interface{}) error {
-	var body *bytes.Buffer
-	if requestModel.Body != "" {
-		body = bytes.NewBufferString(requestModel.Body)
-	}
+
+	body := bytes.NewBufferString(requestModel.Body)
+
 	req, err := http.NewRequest(requestModel.Type, requestModel.URL, body)
 	switch requestModel.TokenType {
 	case Basic:
