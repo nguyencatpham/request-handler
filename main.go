@@ -77,16 +77,22 @@ func Base(requestModel RequestModel, result *interface{}) error {
 	if resp.StatusCode >= http.StatusBadRequest {
 		message := fmt.Sprintf("%s-URL:%s-ERROR CODE:%v\n", requestModel.Type, requestModel.URL, resp.StatusCode)
 		if result != nil && !reflect.ValueOf(result).IsNil() {
-			temp, ok := (*result).(map[string]interface{})
-			if ok && temp != nil && temp["data"] != nil {
-				data := (temp["data"]).(map[string]interface{})
-				if data != nil {
-					msg := data["message"]
-					if msg != nil {
-						msgStr := msg.(string)
+			switch (*result).(type) {
+			case string:
+				message = fmt.Sprintf("%s %v", message, *result)
+			default:
+				temp, ok := (*result).(map[string]interface{})
+				fmt.Printf("res    %+v\n", temp)
+				if ok && temp != nil && temp["data"] != nil {
+					data := (temp["data"]).(map[string]interface{})
+					if data != nil {
+						msg := data["message"]
+						if msg != nil {
+							msgStr := msg.(string)
 
-						if msgStr != "" {
-							message = msgStr
+							if msgStr != "" {
+								message = msgStr
+							}
 						}
 					}
 				}
