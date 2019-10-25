@@ -7,7 +7,7 @@
 Request handler is a package extend from net/http. It provides HTTP client and server implementations easier.
   - Get, Head, Post, and PostForm make HTTP (or HTTPS) requests
   - Clients and Transports are safe for concurrent use by multiple goroutines and for efficiency should only be created once and re-used.
-
+### This project is deprecated. It has moved to github.com/onskycloud/request-handler
 # Getting Started!
 
   #### Model input
